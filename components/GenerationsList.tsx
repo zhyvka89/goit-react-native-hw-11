@@ -1,9 +1,11 @@
 import { useGeneration } from "@/contexts/GenerationContext";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { getThemeColors } from "@/utilities/theme";
-import React from 'react';
-import { Button, FlatList, ImageSourcePropType, StyleSheet, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { Alert, Button, FlatList, ImageSourcePropType, LayoutAnimation, Platform, StyleSheet, UIManager, View } from 'react-native';
+import Toast from 'react-native-toast-message';
 import GenerationCard from '../components/GenerationCard';
+import AddGenerationModal from "./modals/AddGenerationModal";
 
 type Generation = {
   id: string;
@@ -11,7 +13,7 @@ type Generation = {
   image: ImageSourcePropType;
 };
 
-const generations: Generation[] = [
+const initialGenerations: Generation[] = [
   { id: '1', title: 'U9', image: require('../assets/images/1.jpg') },
   { id: '2', title: 'U10', image: require('../assets/images/2.jpg') },
   { id: '3', title: 'U11', image: require('../assets/images/3.jpg') },
@@ -20,25 +22,73 @@ const generations: Generation[] = [
   { id: '6', title: 'U14', image: require('../assets/images/6.jpg') },
 ];
 
+if (
+  Platform.OS === 'android' &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 export default function GenerationsList({navigation}: {navigation: any}) {
   const { theme } = useThemeContext();
   const colors = getThemeColors(theme);
   const { setGeneration } = useGeneration();
-  console.log(theme);
+  const [generations, setGenerations] = useState(initialGenerations);
+  const flatListRef = useRef<FlatList>(null);
+  const [modalVisible, setModalVisible] = useState(false);
   
   const handleAddGeneration = () => {
-    // later: navigation.navigate('AddGeneration');
-    alert('Add Generation Pressed!');
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+    const newId = (generations.length + 1).toString();
+    const newGeneration: Generation = {
+      id: newId,
+      title: `U${9 + generations.length}`,
+      image: require('../assets/images/1.jpg'),
+    };
+
+    setGenerations([...generations, newGeneration]);
+
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 300);
+
+    Toast.show({
+      type: "success",
+      text1: "Generation added successfully!",
+    });
+  };
+
+   const handleRemoveGeneration = (id: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setGenerations(prev => prev.filter(gen => gen.id !== id));
+
+    Toast.show({
+      type: "success",
+      text1: "Generation removed successfully!",
+    });
   };
 
   const handleGenerationPress = (generation: any) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setGeneration(generation);
     navigation.navigate('MembersList');
   }
 
+  const handleLongPress = (id: string) => {
+    Alert.alert(
+      'Delete Generation',
+      'Are you sure you want to delete this generation?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', onPress: () => handleRemoveGeneration(id), style: 'destructive' },
+      ]
+    );
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
+        ref={flatListRef}
         data={generations}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
@@ -46,6 +96,7 @@ export default function GenerationsList({navigation}: {navigation: any}) {
             title={item.title}
             image={item.image}
             onPress={() => handleGenerationPress(item)}
+            onLongPress={() => handleLongPress(item.id)}
           />
         )}
         numColumns={2} 
@@ -54,8 +105,15 @@ export default function GenerationsList({navigation}: {navigation: any}) {
       />
 
       <View style={styles.buttonContainer}> 
-        <Button title="Add Generation" onPress={handleAddGeneration} />
+        <Button title="Add Generation" onPress={() => setModalVisible(true)} />
       </View>
+
+      <AddGenerationModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onAdd={handleAddGeneration}
+      />
+      <Toast />
     </View>
   );
 }

@@ -5,11 +5,12 @@ type GenerationCardProps = {
   title: string;
   image: ImageSourcePropType;
   onPress: () => void;
+  onLongPress: () => void;
 };
 
-export default function GenerationCard({ title, image, onPress }: GenerationCardProps) {
+export default function GenerationCard({ title, image, onPress, onLongPress }: GenerationCardProps) {
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress}>
+    <TouchableOpacity style={styles.card} onPress={onPress} onLongPress={onLongPress}>
       <Image source={image} style={styles.image} />
       <Text style={styles.title}>{title}</Text>
     </TouchableOpacity>

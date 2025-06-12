@@ -1,4 +1,4 @@
-import { fetchUsers } from "@/api";
+import { deleteUser, fetchUsers } from "@/api";
 import { useGeneration } from "@/contexts/GenerationContext";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { RootStackParamList } from "@/navigation/NativeStackNavigator";
@@ -6,13 +6,18 @@ import { getThemeColors } from "@/utilities/theme";
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useEffect, useState } from "react";
 import {
+  Alert,
+  Button,
   FlatList,
   Image,
+  LayoutAnimation,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import Toast from 'react-native-toast-message';
+import AddMemberModal from "./modals/AddMemeberModal";
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MembersList'>;
 
@@ -23,14 +28,44 @@ export default function MembersList({
   const { theme } = useThemeContext();
   const colors = getThemeColors(theme);
   const { generation } = useGeneration();
+  const [modalVisible, setModalVisible] = useState(false);
 
-  console.log(theme)
-
-  useEffect(() => {
+  const loadMembers = () => {
     fetchUsers()
       .then((result) => setMembers(result))
       .catch((error) => console.error(error));
+  };
+
+  useEffect(() => {
+    loadMembers()
   }, []);
+
+  const handleRemoveMember = (id: string, name: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    
+    deleteUser(id).then(() => {
+      Toast.show({
+        type: "success",
+        text1: `${name} deleted successfully!`,
+      });
+    }).catch((error) => {
+      Toast.show({
+        type: "error",
+        text1: `Failed to delete ${name}. Please try again.`,
+      });
+    })
+  };
+
+  const handleLongPress = (id: string, name: string) => {
+    Alert.alert(
+      `Delete ${name}?`,
+      'Are you sure?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', onPress: () => handleRemoveMember(id, name), style: 'destructive' },
+      ]
+    );
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -40,7 +75,6 @@ export default function MembersList({
 
       <FlatList
         data={members}
-        key={"2-cols"}
         keyExtractor={(item: any) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity
@@ -48,6 +82,7 @@ export default function MembersList({
             onPress={() =>
               navigation.navigate("MemberDetails", { memberId: item.id })
             }
+            onLongPress={() => handleLongPress(item.id, item.name)}
           >
             <Image
               source={require("../assets/images/avatar.jpg")}
@@ -57,12 +92,23 @@ export default function MembersList({
           </TouchableOpacity>
         )}
       />
+      <View style={styles.buttonContainer}> 
+        <Button title="Add New Member" onPress={() => setModalVisible(true)} />
+      </View>
+
+      <AddMemberModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onAdd={loadMembers}
+      />
+      <Toast />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     padding: 20,
   },
   title: {
@@ -85,5 +131,10 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 16,
+  },
+   buttonContainer: {
+    padding: 20,
+    borderTopWidth: 1,
+    borderColor: '#ddd',
   },
 });
