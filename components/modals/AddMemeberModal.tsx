@@ -1,5 +1,5 @@
-import { addUser } from '@/api';
-import React, { useState } from 'react';
+import { addUser } from "@/api";
+import React, { useState } from "react";
 import {
   Button,
   Keyboard,
@@ -11,8 +11,8 @@ import {
   TextInput,
   TouchableWithoutFeedback,
   View,
-} from 'react-native';
-import Toast from 'react-native-toast-message';
+} from "react-native";
+import Toast from "react-native-toast-message";
 
 interface AddMemberModalProps {
   visible: boolean;
@@ -20,31 +20,34 @@ interface AddMemberModalProps {
   onAdd: () => void;
 }
 
-export default function AddMemberModal({ visible, onClose, onAdd }: AddMemberModalProps) {
+export default React.memo(function AddMemberModal({
+  visible,
+  onClose,
+  onAdd,
+}: AddMemberModalProps) {
   const [newMember, setNewMember] = useState({
-    name: '',
-    email: '',
+    name: "",
+    email: "",
   });
 
   const handleSubmit = () => {
     if (!newMember.name || !newMember.email) return;
-  
-    addUser(newMember)
-      .then(() => {
-        setNewMember({ name: '', email: '' });
-        onAdd();
-        onClose();
-        Toast.show({
-          type: "success",
-          text1: `Member ${newMember.name} added successfully!`,
-        });
-      })
+
+    addUser(newMember).then(() => {
+      setNewMember({ name: "", email: "" });
+      onAdd();
+      onClose();
+      Toast.show({
+        type: "success",
+        text1: `Member ${newMember.name} added successfully!`,
+      });
+    });
   };
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -53,13 +56,17 @@ export default function AddMemberModal({ visible, onClose, onAdd }: AddMemberMod
               <Text style={styles.title}>Add New Member</Text>
               <TextInput
                 value={newMember.name}
-                onChangeText={(value) => setNewMember(prev => ({ ...prev, name: value }))}
+                onChangeText={(value) =>
+                  setNewMember((prev) => ({ ...prev, name: value }))
+                }
                 placeholder="Full Name"
                 style={styles.input}
               />
               <TextInput
                 value={newMember.email}
-                onChangeText={(value) => setNewMember(prev => ({ ...prev, email: value }))}
+                onChangeText={(value) =>
+                  setNewMember((prev) => ({ ...prev, email: value }))
+                }
                 placeholder="Email"
                 style={styles.input}
               />
@@ -73,38 +80,38 @@ export default function AddMemberModal({ visible, onClose, onAdd }: AddMemberMod
       </KeyboardAvoidingView>
     </Modal>
   );
-}
+});
 
 const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
     padding: 20,
   },
   innerContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 10,
     padding: 20,
   },
   title: {
     fontSize: 20,
     marginBottom: 12,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   input: {
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderWidth: 1,
     borderRadius: 6,
     padding: 10,
     marginBottom: 16,
   },
   buttons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
 });

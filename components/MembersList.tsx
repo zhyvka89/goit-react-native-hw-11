@@ -3,8 +3,8 @@ import { useGeneration } from "@/contexts/GenerationContext";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { RootStackParamList } from "@/navigation/NativeStackNavigator";
 import { getThemeColors } from "@/utilities/theme";
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useEffect, useState } from "react";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Button,
@@ -16,14 +16,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Toast from 'react-native-toast-message';
+import Toast from "react-native-toast-message";
 import AddMemberModal from "./modals/AddMemeberModal";
 
-type Props = NativeStackScreenProps<RootStackParamList, 'MembersList'>;
+type Props = NativeStackScreenProps<RootStackParamList, "MembersList">;
 
-export default function MembersList({
-  navigation,
-}: Props) {
+export default function MembersList({ navigation }: Props) {
   const [members, setMembers] = useState([]);
   const { theme } = useThemeContext();
   const colors = getThemeColors(theme);
@@ -37,69 +35,79 @@ export default function MembersList({
   };
 
   useEffect(() => {
-    loadMembers()
+    loadMembers();
   }, []);
 
-  const handleRemoveMember = (id: string, name: string) => {
+  const handleRemoveMember = useCallback((id: string, name: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    
-    deleteUser(id).then(() => {
-      Toast.show({
-        type: "success",
-        text1: `${name} deleted successfully!`,
-      });
-    }).catch((error) => {
-      Toast.show({
-        type: "error",
-        text1: `Failed to delete ${name}. Please try again.`,
-      });
-    })
-  };
 
-  const handleLongPress = (id: string, name: string) => {
-    Alert.alert(
-      `Delete ${name}?`,
-      'Are you sure?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', onPress: () => handleRemoveMember(id, name), style: 'destructive' },
-      ]
-    );
-  };
+    deleteUser(id)
+      .then(() => {
+        Toast.show({
+          type: "success",
+          text1: `${name} deleted successfully!`,
+        });
+      })
+      .catch((error) => {
+        Toast.show({
+          type: "error",
+          text1: `Failed to delete ${name}. Please try again.`,
+        });
+      });
+  }, []);
+
+  const handleLongPress = useCallback(
+    (id: string, name: string) => {
+      Alert.alert(`Delete ${name}?`, "Are you sure?", [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          onPress: () => handleRemoveMember(id, name),
+          style: "destructive",
+        },
+      ]);
+    },
+    [handleRemoveMember]
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Text style={[styles.title, {color: colors.text}]}>
+      <Text style={[styles.title, { color: colors.text }]}>
         {generation ? `${generation.title} Members` : "Members"}
       </Text>
 
       <FlatList
         data={members}
         keyExtractor={(item: any) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.memberRow}
-            onPress={() =>
-              navigation.navigate("MemberDetails", { memberId: item.id })
-            }
-            onLongPress={() => handleLongPress(item.id, item.name)}
-          >
-            <Image
-              source={require("../assets/images/avatar.jpg")}
-              style={styles.avatar}
-            />
-            <Text style={[styles.name , {color: colors.text}]}>{item.name}</Text>
-          </TouchableOpacity>
+        renderItem={useCallback(
+          ({ item }: any) => (
+            <TouchableOpacity
+              style={styles.memberRow}
+              onPress={() =>
+                navigation.navigate("MemberDetails", { memberId: item.id })
+              }
+              onLongPress={() => handleLongPress(item.id, item.name)}
+            >
+              <Image
+                source={require("../assets/images/avatar.jpg")}
+                style={styles.avatar}
+              />
+              <Text style={[styles.name, { color: colors.text }]}>
+                {item.name}
+              </Text>
+            </TouchableOpacity>
+          ),
+          [navigation, colors.text, handleLongPress]
         )}
       />
-      <View style={styles.buttonContainer}> 
+      <View style={styles.buttonContainer}>
         <Button title="Add New Member" onPress={() => setModalVisible(true)} />
       </View>
 
       <AddMemberModal
         visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        onAdd={loadMembers}
+        onClose={useCallback(() => setModalVisible(false), [])}
+        onAdd={useCallback((loadMembers), [loadMembers])}
       />
       <Toast />
     </View>
@@ -132,9 +140,9 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 16,
   },
-   buttonContainer: {
+  buttonContainer: {
     padding: 20,
     borderTopWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
   },
 });
